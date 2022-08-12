@@ -1,0 +1,1228 @@
+function varargout = GUI_Randaemon_delta_v1(varargin)
+% GUI_RANDAEMON_DELTA_V1 MATLAB code for GUI_Randaemon_delta_v1.fig
+%      GUI_RANDAEMON_DELTA_V1, by itself, creates a new GUI_RANDAEMON_DELTA_V1 or raises the existing
+%      singleton*.
+%
+%      H = GUI_RANDAEMON_DELTA_V1 returns the handle to a new GUI_RANDAEMON_DELTA_V1 or the handle to
+%      the existing singleton*.
+%
+%      GUI_RANDAEMON_DELTA_V1('CALLBACK',hObject,eventData,handles,...) calls the local
+%      function named CALLBACK in GUI_RANDAEMON_DELTA_V1.M with the given input arguments.
+%
+%      GUI_RANDAEMON_DELTA_V1('Property','Value',...) creates a new GUI_RANDAEMON_DELTA_V1 or raises the
+%      existing singleton*.  Starting from the left, property value pairs are
+%      applied to the GUI before GUI_Randaemon_delta_v1_OpeningFcn gets called.  An
+%      unrecognized property name or invalid value makes property application
+%      stop.  All inputs are passed to GUI_Randaemon_delta_v1_OpeningFcn via varargin.
+%
+%      *See GUI Options on GUIDE's Tools menu.  Choose "GUI allows only one
+%      instance to run (singleton)".
+%
+% See also: GUIDE, GUIDATA, GUIHANDLES
+
+% Edit the above text to modify the response to help GUI_Randaemon_delta_v1
+
+% Last Modified by GUIDE v2.5 15-Sep-2015 00:32:11
+
+% Begin initialization code - DO NOT EDIT
+gui_Singleton = 1;
+gui_State = struct('gui_Name',       mfilename, ...
+                   'gui_Singleton',  gui_Singleton, ...
+                   'gui_OpeningFcn', @GUI_Randaemon_delta_v1_OpeningFcn, ...
+                   'gui_OutputFcn',  @GUI_Randaemon_delta_v1_OutputFcn, ...
+                   'gui_LayoutFcn',  [] , ...
+                   'gui_Callback',   []);
+if nargin && ischar(varargin{1})
+    gui_State.gui_Callback = str2func(varargin{1});
+end
+
+if nargout
+    [varargout{1:nargout}] = gui_mainfcn(gui_State, varargin{:});
+else
+    gui_mainfcn(gui_State, varargin{:});
+end
+% End initialization code - DO NOT EDIT
+
+% --- Executes just before GUI_Randaemon_delta_v1 is made visible.
+function GUI_Randaemon_delta_v1_OpeningFcn(hObject, eventdata, handles, varargin)
+% This function has no output args, see OutputFcn.
+% hObject    handle to figure
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+% varargin   command line arguments to GUI_Randaemon_delta_v1 (see VARARGIN)
+
+%%%%%%%%%%%%%%%%%%%%%%%%% added by Chen Yi %%%%%%%%%%%%%%%%%
+% configure serial port
+global baud;
+baud = 4800;
+
+global start_byte_1 start_byte_2 end_byte_1 end_byte_2 MAX_PacLen;
+%
+start_byte_1=hex2dec('FE');
+start_byte_2=hex2dec('3F');
+end_byte_1=hex2dec('FC');
+end_byte_2=hex2dec('1F');
+MAX_PacLen=256;
+%%%%%%% initiation
+global TimeResolution SampleLength OperationPrd TimeNEU TimeSettle N_ReadOut;
+global sel_ReadOut_2PC;
+TimeResolution=0.2e-3;
+SampleLength=2000e-3/0.2e-3;
+OperationPrd=20e-3;
+TimeNEU=10e-3;
+TimeSettle=5e-3;
+N_ReadOut=101;
+sel_ReadOut_2PC=[2:101];
+
+global Monkey Distri N_Moves sel_input;
+Monkey='K';
+Distri=1;
+N_Moves=12;
+sel_input=[];  % select among 0-127
+
+global NumberOfNeurons N_HLN N_delay SDL;
+NumberOfNeurons = 4;
+N_HLN = 60;
+N_delay = 0;
+SDL = 0;
+
+global NOB_Weight;
+NOB_Weight = 16;
+
+global CA CB ext_ctrl;
+CA=2;CB=2;
+ext_ctrl=0;
+
+global recordLength samplePeriod bias_current;
+recordLength = 20;
+samplePeriod = 1;
+bias_current = 10;
+
+global ImagePosition PC;
+PC=0;
+if PC
+%     DataPosition='D:\Dropbox\OK-AMS035-Oct13\20140609\';
+    DataPosition='D:\Dropbox\CY\decoder\Randaemon_delta\EventData\';
+    SavePosition='D:\Dropbox\CY\decoder\Randaemon_delta\Results\';
+    ImagePosition='D:\Dropbox\CY\decoder\personImages\';
+else
+%     DataPosition='C:Users\ChenYi\Dropbox\OK-AMS035-Oct13\20140609\';
+    DataPosition='C:\Users\Chen Yi\Dropbox\CY\decoder\Randaemon_delta\EventData\';
+    SavePosition='C:\Users\Chen Yi\Dropbox\CY\decoder\Randaemon_delta\Results\';
+    ImagePosition='C:\Users\Chen Yi\Dropbox\CY\decoder\personImages\';
+end
+
+global P0 P1 P2 P3 P4 P5;
+global PersonsImage RoomStatus;
+P0=imread(strcat(ImagePosition,'P0.JPG'));
+P1=imread(strcat(ImagePosition,'P1.JPG'));
+P2=imread(strcat(ImagePosition,'P2.JPG'));
+P3=imread(strcat(ImagePosition,'P3.JPG'));
+P4=imread(strcat(ImagePosition,'P4.JPG'));
+P5=imread(strcat(ImagePosition,'P5.JPG'));
+
+PersonsImage=cell(6,1);
+PersonsImage{1}=P0;
+PersonsImage{2}=P1;
+PersonsImage{3}=P2;
+PersonsImage{4}=P3;
+PersonsImage{5}=P4;
+PersonsImage{6}=P5;
+
+RoomStatus=cell(6,1);
+RoomStatus{1}='No person';
+RoomStatus{2}='One person';
+RoomStatus{3}='Two persons';
+RoomStatus{4}='Three persons';
+RoomStatus{5}='Four persons';
+RoomStatus{6}='Five persons';
+
+%%%%%%%%%%%%%%%%%%%%%%%%% added by Chen Yi %%%%%%%%%%%%%%%%%
+
+% Choose default command line output for GUI_Randaemon_delta_v1
+handles.output = hObject;
+
+% Update handles structure
+guidata(hObject, handles);
+
+% This sets up the initial plot - only do when we are invisible
+% so window can get raised using GUI_Randaemon_delta_v1.
+if strcmp(get(hObject,'Visible'),'off')
+% % %     axes(handles.axes_SPK);
+% % %     cla;
+% % %     T_tmp=zeros(40,10000);
+% % %     plot(T_tmp','-b','LineWidth',2);
+% % %     ylim([0 40]);
+% % %     xlim([0 10000]);
+% % %     set(gca,'YTick',0:10:40);
+% % %     set(gca,'YTickLabel',{'','10','20','30','40'},'FontSize',14);
+% % %     set(gca,'XTick',0:2500:10000);
+% % %     set(gca,'XTickLabel',{'0','0.5','1','1.5','2'},'FontSize',14);
+% % %     ylabel('Input Spikes','FontSize',14);
+% % %     xlabel('Time (s)','FontSize',14);
+% % %     
+% % %     axes(handles.axes_ELMOutput);
+% % %     cla;
+% % %     plot(0,0,'-b','LineWidth',2);
+% % %     ylim([0 1.5]);
+% % %     xlim([0 100]);
+% % %     set(gca,'YTick',0:0.5:1.5);
+% % %     set(gca,'YTickLabel',{'','','1',''},'FontSize',14);
+% % %     set(gca,'XTick',0:25:100);
+% % %     set(gca,'XTickLabel',{'0','0.5','1','1.5','2'},'FontSize',14);
+% % %     ylabel('Decoder Output','FontSize',14);
+% % % 
+% % %     axes(handles.axes_LH);
+% % %     cla;
+% % %     
+% % %     imshow(NL);
+end
+
+% UIWAIT makes GUI_Randaemon_delta_v1 wait for user response (see UIRESUME)
+% uiwait(handles.figure1);
+
+
+% --- Outputs from this function are returned to the command line.
+function varargout = GUI_Randaemon_delta_v1_OutputFcn(hObject, eventdata, handles)
+% varargout  cell array for returning output args (see VARARGOUT);
+% hObject    handle to figure
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+%%%%%%%%%%%%%%%%%%%%%%%%% added by Chen Yi %%%%%%%%%%%%%%%%%
+% global uart;
+% if strcmp(uart.Status,'open')
+%     fclose(uart);
+% end
+%%%%%%%%%%%%%%%%%%%%%%%%% added by Chen Yi %%%%%%%%%%%%%%%%%
+
+% Get default command line output from handles structure
+varargout{1} = handles.output;
+
+
+
+function edit_baud_Callback(hObject, eventdata, handles)
+% hObject    handle to edit_baud (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+global baud PortNumber uart;
+baud = str2double(get(hObject,'String'));
+uart=serial(strcat('COM',PortNumber),'BaudRate',baud,'DataBits',8,'StopBits',1);%creat a serial port object
+% Hints: get(hObject,'String') returns contents of edit_baud as text
+%        str2double(get(hObject,'String')) returns contents of edit_baud as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function edit_baud_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to edit_baud (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+global baud;
+baud = 9600;
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+
+% --- Executes on button press in pushbutton_OpenCOM.
+function pushbutton_OpenCOM_Callback(hObject, eventdata, handles)
+% hObject    handle to pushbutton_OpenCOM (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+global uart;
+% if strcmp(uart.Status,'open')
+%     fclose(uart);
+% end
+if strcmp(uart.Status,'closed')
+    fclose(uart);
+end
+fopen(uart);
+if strcmp(uart.Status,'open')
+    set(handles.text_COMStatus, 'String', 'Connected!')
+else
+    set(handles.text_COMStatus, 'String', 'Failed!')
+end
+
+
+% --- Executes on button press in pushbutton_CloseCOM.
+function pushbutton_CloseCOM_Callback(hObject, eventdata, handles)
+% hObject    handle to pushbutton_CloseCOM (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+global uart;
+fclose(uart);
+if strcmp(uart.Status,'closed')
+    set(handles.text_COMStatus, 'String', 'Closed!')
+else
+    set(handles.text_COMStatus, 'String', 'Failed!')
+end
+
+% --- Executes on button press in checkbox_ActiveMode.
+function checkbox_ActiveMode_Callback(hObject, eventdata, handles)
+% hObject    handle to checkbox_ActiveMode (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+global mode
+mode = get(hObject,'Value');   
+    
+% Hint: get(hObject,'Value') returns toggle state of checkbox_ActiveMode
+
+
+
+function edit_InputDim_Callback(hObject, eventdata, handles)
+% hObject    handle to edit_InputDim (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+global NumberOfNeurons;
+NumberOfNeurons = str2double(get(hObject,'String'));
+% Hints: get(hObject,'String') returns contents of edit_InputDim as text
+%        str2double(get(hObject,'String')) returns contents of edit_InputDim as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function edit_InputDim_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to edit_InputDim (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+global NumberOfNeurons;
+NumberOfNeurons =40;
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+% --- Executes on selection change in popupmenu_DecodeMode.
+function popupmenu_DecodeMode_Callback(hObject, eventdata, handles)
+% hObject    handle to popupmenu_DecodeMode (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+global onlineMode;  % 0-random projection, 1-OM, 2-MC, 3-combined
+contents = cellstr(get(hObject,'String'));
+switch contents{get(hObject,'Value')}
+    case 'Raw'
+        onlineMode = 1;
+    case 'Hidden Layer'
+        onlineMode = 2;
+    case 'Output Layer'
+        onlineMode = 4;
+    case 'Only Label'
+        onlineMode = 8;
+end
+% Hints: contents = cellstr(get(hObject,'String')) returns popupmenu_DecodeMode contents as cell array
+%        contents{get(hObject,'Value')} returns selected item from popupmenu_DecodeMode
+
+
+% --- Executes during object creation, after setting all properties.
+function popupmenu_DecodeMode_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to popupmenu_DecodeMode (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+global DecodeMode onlineMode;
+DecodeMode = 2;  % 0-random projection, 1-OM, 2-MC, 3-combined
+onlineMode = 1;  % on-line raw 
+% Hint: popupmenu controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+
+function edit_HiddenDim_Callback(hObject, eventdata, handles)
+% hObject    handle to edit_HiddenDim (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+global N_HLN;
+N_HLN = str2double(get(hObject,'String'));
+% Hints: get(hObject,'String') returns contents of edit_HiddenDim as text
+%        str2double(get(hObject,'String')) returns contents of edit_HiddenDim as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function edit_HiddenDim_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to edit_HiddenDim (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+global N_HLN;
+N_HLN = 60;
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+% --- Executes on selection change in popupmenu_DelayTime.
+function popupmenu_DelayTime_Callback(hObject, eventdata, handles)
+% hObject    handle to popupmenu_DelayTime (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+global SDL;
+contents = cellstr(get(hObject,'String'));
+switch contents{get(hObject,'Value')}
+    case '20 ms'
+        SDL=0;
+    case '40 ms'
+        SDL=1;
+    case '60 ms'
+        SDL=2;
+    case '80 ms'
+        SDL=3;
+    case '100 ms'
+        SDL=4;
+end
+% Hints: contents = cellstr(get(hObject,'String')) returns popupmenu_DelayTime contents as cell array
+%        contents{get(hObject,'Value')} returns selected item from popupmenu_DelayTime
+
+
+% --- Executes during object creation, after setting all properties.
+function popupmenu_DelayTime_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to popupmenu_DelayTime (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+global SDL;
+SDL = 0;
+% Hint: popupmenu controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+% --- Executes on selection change in popupmenu_DelayCh.
+function popupmenu_DelayCh_Callback(hObject, eventdata, handles)
+% hObject    handle to popupmenu_DelayCh (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+global N_delay;
+contents = cellstr(get(hObject,'String'));
+N_delay=str2double(contents{get(hObject,'Value')});
+        
+% Hints: contents = cellstr(get(hObject,'String')) returns popupmenu_DelayCh contents as cell array
+%        contents{get(hObject,'Value')} returns selected item from popupmenu_DelayCh
+
+
+% --- Executes during object creation, after setting all properties.
+function popupmenu_DelayCh_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to popupmenu_DelayCh (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+global N_delay;
+N_delay = 0;
+% Hint: popupmenu controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+
+function edit_Bias_Callback(hObject, eventdata, handles)
+% hObject    handle to edit_Bias (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+global bias_current;
+bias_current=str2double(get(hObject,'String'));
+if bias_current<1
+    bias_current = 1;
+end
+if bias_current>63
+    bias_current = 63;
+end
+% Hints: get(hObject,'String') returns contents of edit_Bias as text
+%        str2double(get(hObject,'String')) returns contents of edit_Bias as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function edit_Bias_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to edit_Bias (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+global bias_current;
+bias_current = 10;
+set(hObject,'String',num2str(bias_current));
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+% --- Executes on selection change in popupmenu_HiddenNOB.
+function popupmenu_HiddenNOB_Callback(hObject, eventdata, handles)
+% hObject    handle to popupmenu_HiddenNOB (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+global RES NOB_CNT;
+contents = cellstr(get(hObject,'String'));
+NOB_CNT = str2double(contents{get(hObject,'Value')});
+RES = NOB_CNT - 6;
+% Hints: contents = cellstr(get(hObject,'String')) returns popupmenu_HiddenNOB contents as cell array
+%        contents{get(hObject,'Value')} returns selected item from popupmenu_HiddenNOB
+
+
+% --- Executes during object creation, after setting all properties.
+function popupmenu_HiddenNOB_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to popupmenu_HiddenNOB (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+global RES;
+RES = 4;
+% Hint: popupmenu controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+% --- Executes on button press in checkbox_ActiveOn.
+function checkbox_ActiveOn_Callback(hObject, eventdata, handles)
+% hObject    handle to checkbox_ActiveOn (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+global active;
+active = get(hObject,'Value');
+% Hint: get(hObject,'Value') returns toggle state of checkbox_ActiveOn
+
+
+% --- Executes on button press in pushbutton_SetDecoder.
+function pushbutton_SetDecoder_Callback(hObject, eventdata, handles)
+% hObject    handle to pushbutton_SetDecoder (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+global uart;
+global start_byte_1 start_byte_2 end_byte_1 end_byte_2;
+global N_delay SavePosition DataPosition Monkey N_Moves NumberOfNeurons Distri
+global sel_input bias_current;
+global RES SDL CA CB ext_ctrl active mode;
+
+global sel_output Bin_out;
+load(strcat(SavePosition,'OutputChannelSelection'));    % load sel_output;
+Bin_out=zeros(1,128);
+Bin_out(sel_output+1)=1;
+
+if strcmp(uart.Status, 'closed')
+    set(handles.text_Status, 'String', 'Device not connected!');
+else
+    DataFile=strcat('decoder_test_AMS035_',Monkey,num2str(N_Moves),'_',num2str(NumberOfNeurons),'_Distri_',num2str(Distri),'_OM.mat');
+    if N_delay==1
+        load(strcat(DataPosition,DataFile));
+        sel_input=input_ch_set{1};
+    end
+    if N_delay==2
+        load(strcat(DataPosition,DataFile));
+        sel_input=input_ch_set{2};
+    end
+
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    spi_data=SPI_data_MSP430_AMS035(sel_input, bias_current, sel_output);
+    %         ddata=SPI_data_MSP430_AMS035(127,    63,   127);
+    %                   Sext0-127,B0-5,NEU_S 0-127. 262-bit in total
+
+    switch_data=Switch_MSP430_AMS035(RES, SDL, CA, CB, ext_ctrl, active, mode);
+
+    command=hex2dec('81');
+    package=[start_byte_1 start_byte_2 command spi_data switch_data end_byte_1 end_byte_2]';
+    spi_data=spi_data';
+    fwrite(uart,package,'uchar');
+    pause(0.1);
+
+    [rtn_package_header(1:3),count] = fread(uart,3,'uchar');
+    [rtn_package,count] = fread(uart,rtn_package_header(3),'uchar');
+    spi_data_rtn=rtn_package(35:67);
+
+    % clc;
+    spi_rtn_tmp=zeros(1,8*length(spi_data_rtn));
+    for i=1:length(spi_data_rtn)
+        spi_rtn_tmp((i-1)*8+1:i*8)=bitget(spi_data_rtn(i),[8:-1:1]);
+    end
+    if (spi_rtn_tmp(end)==0)&&(spi_rtn_tmp(end-1)==0)
+        spi_rtn_tmp2=[0 0 spi_rtn_tmp(1:end-2)];
+        spi_rtn_final=((2.^(7:-1:0))*reshape(spi_rtn_tmp2,8,33))';
+
+        if isempty(find(spi_rtn_final~=spi_data,1))
+%             disp('SPI setting correct');
+            set(handles.text_Status, 'String', 'Decoder setting completed!');
+        else
+%             disp('Decoder setting failed');
+            set(handles.text_Status, 'String', 'Decoder setting failed!');
+        end
+    else
+%         disp('SPI setting fails');
+        set(handles.text_Status, 'String', 'Decoder setting failed!')
+    end
+end
+
+% --- Executes on button press in pushbutton_Train.
+function pushbutton_Train_Callback(hObject, eventdata, handles)
+% hObject    handle to pushbutton_Train (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+global SavePosition;
+global uart;
+global start_byte_1 start_byte_2 end_byte_1 end_byte_2 MAX_PacLen;
+command=hex2dec('84');  % loading OM and MC weights, OM goes first
+
+global RES_OutputWeight_OM NOB_Weight;
+% MC weights
+load(strcat(SavePosition,'OutputWeight_MC_16bit_signed.mat'));
+% OM weights
+load(strcat(SavePosition,'OutputWeight_OM_16bit_signed.mat'));
+
+% load OM weights into MSP430; OM always goes first
+LoadingWeightsType=0;   % 0 for loading OM weights; 1 for loading MC weights; OM always goes firstly
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+OutputWeights=OutputWeights_OM;
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+NumberOfOutputNeurons=size(OutputWeights,2);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+global NumberOfOutputNeurons_OM;
+NumberOfOutputNeurons_OM=NumberOfOutputNeurons;
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+global sel_output;
+NumberOfWeights=length(sel_output)*NumberOfOutputNeurons;
+NumberOfBytesInWeights=NumberOfWeights*NOB_Weight/8;
+
+OutputWeights=reshape(OutputWeights,1,NumberOfWeights);
+WeightsInByte=zeros(1,NumberOfBytesInWeights);
+for i=1:length(OutputWeights)
+    WeightsInByte(i*2)=floor(OutputWeights(i)/256);
+    WeightsInByte(i*2-1)=OutputWeights(i)-WeightsInByte(i*2)*256;
+end
+
+Package_LoadWeights_Srt=uint8([start_byte_1 start_byte_2 command 0 NumberOfOutputNeurons LoadingWeightsType end_byte_1 end_byte_2]');
+NumberOfDataFrame=ceil(NumberOfBytesInWeights/(MAX_PacLen-2));
+Package_LoadWeights=cell(NumberOfDataFrame,1);
+for i=1:NumberOfDataFrame
+    data=WeightsInByte((i-1)*(MAX_PacLen-2)+1:min(i*(MAX_PacLen-2),NumberOfBytesInWeights));
+    Package_LoadWeights{i}=uint8([start_byte_1 start_byte_2 command i data end_byte_1 end_byte_2]');
+end
+Package_LoadWeights_End=uint8([start_byte_1 start_byte_2 command 255 end_byte_1 end_byte_2]');
+
+LoadStrTime=cputime;
+fwrite(uart,Package_LoadWeights_Srt,'uchar');
+
+pause(0.001);
+[rtn_package_header(1:3),count] = fread(uart,3,'uchar');
+[rtn_package_str,count] = fread(uart,rtn_package_header(3),'uchar');
+LoadingCheck=zeros(NumberOfDataFrame+2,1);
+if ((rtn_package_str(1)==command)&&(rtn_package_str(2)==0)&&(256*rtn_package_str(4)+rtn_package_str(3)==length(Package_LoadWeights_Srt)-4))
+    LoadingCheck(1)=1;
+end
+%
+rtn_package=zeros(4,NumberOfDataFrame);
+for i=1:NumberOfDataFrame
+    fwrite(uart,Package_LoadWeights{i},'uchar');
+    pause(0.005);
+    [rtn_package_header(1:3),count] = fread(uart,3,'uchar');
+    [rtn_package(:,i),count] = fread(uart,rtn_package_header(3),'uchar');
+    if ((rtn_package(1,i)==command)&&(rtn_package(2,i)==i)&&(256*rtn_package(4,i)+rtn_package(3,i)==length(Package_LoadWeights{i})-4))
+        LoadingCheck(i+1)=1;
+    end
+end
+
+fwrite(uart,Package_LoadWeights_End,'uchar');
+pause(0.005);
+[rtn_package_header(1:3),count] = fread(uart,3,'uchar');
+[rtn_package_end,count] = fread(uart,rtn_package_header(3),'uchar');
+if ((rtn_package_end(1)==command)&&(rtn_package_end(2)==255)&&(256*rtn_package_end(4)+rtn_package_end(3)==NumberOfBytesInWeights))
+    LoadingCheck(end)=1;
+end
+LoadEndTime=cputime;
+LoadingTime=LoadEndTime-LoadStrTime;
+if (sum(LoadingCheck)==NumberOfDataFrame+2)
+%     disp('Data Loading Succeeds!');
+    set(handles.text_Status, 'String', 'OM weights loading completed!');
+else
+%     disp('Data Loading Fails!');
+    set(handles.text_Status, 'String', 'OM weights loading failed!');
+end
+% disp(LoadingTime);
+% set(handles.text_Status, 'String', num2str(LoadingTime));
+
+%
+% load MC weights into MSP; OM always goes first
+LoadingWeightsType=1;   % 0 for loading OM weights; 1 for loading MC weights; OM always goes firstly
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+OutputWeights=OutputWeights_MC;
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+NumberOfOutputNeurons=size(OutputWeights,2);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+global NumberOfOutputNeurons_MC;
+NumberOfOutputNeurons_MC=NumberOfOutputNeurons;
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+NumberOfWeights=length(sel_output)*NumberOfOutputNeurons;
+NumberOfBytesInWeights=NumberOfWeights*NOB_Weight/8;
+
+OutputWeights=reshape(OutputWeights,1,NumberOfWeights);
+WeightsInByte=zeros(1,NumberOfBytesInWeights);
+for i=1:length(OutputWeights)
+    WeightsInByte(i*2)=floor(OutputWeights(i)/256);
+    WeightsInByte(i*2-1)=OutputWeights(i)-WeightsInByte(i*2)*256;
+end
+
+Package_LoadWeights_Srt=uint8([start_byte_1 start_byte_2 command 0 NumberOfOutputNeurons LoadingWeightsType end_byte_1 end_byte_2]');
+NumberOfDataFrame=ceil(NumberOfBytesInWeights/(MAX_PacLen-2));
+Package_LoadWeights=cell(NumberOfDataFrame,1);
+for i=1:NumberOfDataFrame
+    data=WeightsInByte((i-1)*(MAX_PacLen-2)+1:min(i*(MAX_PacLen-2),NumberOfBytesInWeights));
+    Package_LoadWeights{i}=uint8([start_byte_1 start_byte_2 command i data end_byte_1 end_byte_2]');
+end
+Package_LoadWeights_End=uint8([start_byte_1 start_byte_2 command 255 end_byte_1 end_byte_2]');
+
+LoadStrTime=cputime;
+fwrite(uart,Package_LoadWeights_Srt,'uchar');
+
+pause(0.001);
+[rtn_package_header(1:3),count] = fread(uart,3,'uchar');
+[rtn_package_str,count] = fread(uart,rtn_package_header(3),'uchar');
+LoadingCheck=zeros(NumberOfDataFrame+2,1);
+if ((rtn_package_str(1)==command)&&(rtn_package_str(2)==0)&&(256*rtn_package_str(4)+rtn_package_str(3)==length(Package_LoadWeights_Srt)-4))
+    LoadingCheck(1)=1;
+end
+%
+rtn_package=zeros(4,NumberOfDataFrame);
+for i=1:NumberOfDataFrame
+    fwrite(uart,Package_LoadWeights{i},'uchar');
+    pause(0.005);
+    [rtn_package_header(1:3),count] = fread(uart,3,'uchar');
+    [rtn_package(:,i),count] = fread(uart,rtn_package_header(3),'uchar');
+    if ((rtn_package(1,i)==command)&&(rtn_package(2,i)==i)&&(256*rtn_package(4,i)+rtn_package(3,i)==length(Package_LoadWeights{i})-4))
+        LoadingCheck(i+1)=1;
+    end
+end
+
+fwrite(uart,Package_LoadWeights_End,'uchar');
+pause(0.005);
+[rtn_package_header(1:3),count] = fread(uart,3,'uchar');
+[rtn_package_end,count] = fread(uart,rtn_package_header(3),'uchar');
+if ((rtn_package_end(1)==command)&&(rtn_package_end(2)==255)&&(256*rtn_package_end(4)+rtn_package_end(3)==NumberOfBytesInWeights))
+    LoadingCheck(end)=1;
+end
+LoadEndTime=cputime;
+LoadingTime=LoadEndTime-LoadStrTime;
+if (sum(LoadingCheck)==NumberOfDataFrame+2)
+%     disp('Data Loading Succeeds!');
+    set(handles.text_Status, 'String', 'MC weights loading completed!');
+else
+%     disp('Data Loading Fails!');
+    set(handles.text_Status, 'String', 'MC weights loading failed!');
+end
+% disp(LoadingTime);
+% set(handles.text_Status, 'String', num2str(LoadingTime));
+
+
+
+% --- Executes on button press in pushbutton_StartDecoding.
+function pushbutton_StartDecoding_Callback(hObject, eventdata, handles)
+% hObject    handle to pushbutton_StartDecoding (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+% testing
+global uart start_byte_1 start_byte_2 end_byte_1 end_byte_2 MAX_PacLen;
+global Bin_out;
+global onlineMode samplePeriodHigh8b samplePeriodLow8b;
+global DecodeMode neuronOnTimeHigh8b neuronOnTimeLow8b;
+global recordLength;
+global OnlineExitCommandPackage;
+global PersonsImage;
+global rtn_package_online_time_stamp rtn_package_online_tmp1 rtn_package_online_raw rtn_package_online_HLN rtn_package_online_LABEL rtn_package_online_OUT;
+
+command=hex2dec('89');
+
+MODE_RAW = 1;
+MODE_HLN = 2;
+MODE_OUT = 4;
+MODE_LABLE = 8;
+
+CLKSRC_TBCLK = 0;
+CLKSRC_ACLK = 1;
+CLKSRC_SMCLK = 2;
+CLKSRC_INCLK = 3;
+
+ID_0 = 0 * 64;  % timer source divider set to be 1
+ID_1 = 1 * 64;  % timer source divider set to be 2
+ID_2 = 2 * 64;  % timer source divider set to be 4
+ID_3 = 3 * 64;  % timer source divider set to be 8
+
+%%%%%% timing %%%%%%
+timerClkSrc = CLKSRC_ACLK;  % timer source clock set to be ACLK (REFO: 32768 Hz)
+timerSrcDiv = ID_3;         % timer source divider set to be 8 (32768 /8 = 4096 Hz)
+timerDiv = 7;               % timer divder set to be 8 (7 + 1), clk freq = 4096 / 8 = 512 Hz 
+%%%%%% timing %%%%%%
+
+bias_1 = 0; scale_1 = 1;
+bias_2 = 0; scale_2 = 1;
+bias_3 = 0; scale_3 = 1;
+bias_4 = 0; scale_4 = 1;
+transformParameters = [bias_1 bias_2 bias_3 bias_4...
+                        scale_1 scale_2 scale_3 scale_4];
+inputDimension = 4;
+inputAddr = [5 34 77 103];
+
+reservedByteOnlineMode = [0 0 0 0];
+NumberOfHLN = 60;
+TrainMode=DecodeMode;
+
+NeuronOutputSelection=(2.^(0:7))*reshape(Bin_out,8,16);
+% NumberOfOutputNeuron = sum(Bin_out);
+
+NumberOfOutputNeuron = 4;
+labelString = cell(NumberOfOutputNeuron,1);
+labelString{1} = '0P';
+labelString{2} = '1P';
+labelString{3} = '2Ps';
+labelString{4} = '3Ps';
+
+
+
+onLineDebug = 0;
+inputVectorDebug = [1 0 0 0];
+
+OnlineEnterCommandPackage=uint8([start_byte_1 start_byte_2 command onlineMode...
+                            timerClkSrc timerSrcDiv timerDiv samplePeriodHigh8b ...
+                            samplePeriodLow8b TrainMode transformParameters...
+                            inputDimension inputAddr NeuronOutputSelection NumberOfHLN...
+                            NumberOfOutputNeuron neuronOnTimeHigh8b neuronOnTimeLow8b...
+                            onLineDebug inputVectorDebug reservedByteOnlineMode...
+                            end_byte_1 end_byte_2]');
+                        
+command_exit=hex2dec('8A');
+OnlineExitCommandPackage=uint8([start_byte_1 start_byte_2 command_exit end_byte_1 end_byte_2]');
+
+sampleDimension = 4;
+NumberOf2ndNeuron = 4;
+switch(onlineMode)
+    case MODE_RAW
+        rtn_pac_len = (sampleDimension)*2;
+        ind_raw = 7 : 7+(sampleDimension)*2-1;
+    case MODE_HLN
+        rtn_pac_len = (sampleDimension + NumberOfHLN)*2;
+        ind_raw = 7 : 7+(sampleDimension)*2-1;
+        ind_hln = ind_raw(end)+1 : ind_raw(end)+NumberOfHLN*2; 
+    case MODE_OUT
+        rtn_pac_len = (sampleDimension + NumberOfHLN)*2 + NumberOf2ndNeuron*4 + 1;
+        ind_raw = 7 : 7+(sampleDimension)*2-1;
+        ind_hln = ind_raw(end)+1 : ind_raw(end)+NumberOfHLN*2; 
+        ind_out = ind_hln(end)+1 : ind_hln(end)+NumberOf2ndNeuron*4;
+        ind_label = ind_out(end) + 1;
+    case MODE_LABLE
+        rtn_pac_len = 1;
+        ind_label = 7;
+    otherwise
+end
+    
+
+rtn_package_online_tmp1 = zeros( rtn_pac_len + 6, recordLength );
+
+while(uart.BytesAvailable ~=0)
+    [tmp1,tmp2]=fread(uart, uart.BytesAvailable, 'uchar');
+end
+fwrite(uart,OnlineEnterCommandPackage,'uchar');
+%
+recordCnt = 0;
+while(recordCnt < recordLength)
+    while(uart.BytesAvailable<4)
+    end;
+    [rtn_package_header(1:4),count] = fread(uart,4,'uchar');
+    if (~isempty(rtn_package_header(1:2) ~= [start_byte_1, start_byte_2]))
+        recordCnt = recordCnt + 1;
+        timeCurrent = clock;
+        rtn_package_online_tmp1(1:6, recordCnt) = timeCurrent';
+        while(uart.BytesAvailable<rtn_package_header(3)*256+rtn_package_header(4))
+        end;
+        [rtn_pac,count] = fread(uart,rtn_package_header(3)*256+rtn_package_header(4),'uchar');
+        rtn_package_online_tmp1(7:end, recordCnt) = rtn_pac;
+        disp('On-line package transferred, Record No.');
+        disp(recordCnt);
+        set(handles.text_Status, 'String', {'On-line package transferred,';...
+                                                ['Record No.',' ',num2str(recordCnt)]});
+    else
+        disp('On-line package transfering failed');
+        set(handles.text_Status, 'String', {'On-line package transfer,';...
+                                                'failed!'});
+    end
+    switch(onlineMode)
+        case MODE_RAW
+            rtn_package_online_tmp2 = reshape(rtn_pac, 2, sampleDimension);
+            rtn_package_online_raw = reshape( (rtn_package_online_tmp2(1,:)*256 + rtn_package_online_tmp2(2,:)),...
+                                            sampleDimension, 1);
+            rtn_package_online_raw(1:2, :) = rtn_package_online_raw(1:2, :)/255*3.3;
+            rtn_package_online_raw(3, :) = rtn_package_online_raw(3, :)/65536*175.72-46.85;    % temperature;
+            rtn_package_online_raw(4, :) = (rtn_package_online_raw(4, :)-2)/65536*125-6;    % relative humiduty
+            set(handles.text_temperature, 'String', num2str(rtn_package_online_raw(3)));
+            set(handles.text_humidity, 'String', num2str(rtn_package_online_raw(4)));
+            set(handles.text_CO2, 'String', num2str(rtn_package_online_raw(1)));
+            set(handles.text_light, 'String', num2str(rtn_package_online_raw(2)));
+            pause(0.05);
+        case MODE_HLN
+            
+        case MODE_OUT
+            rtn_package_online_LABEL = rtn_package_online_tmp1(ind_label, recordCnt);
+            rtn_package_online_tmp2 = reshape(rtn_package_online_tmp1(ind_raw, recordCnt), 2, sampleDimension);
+            rtn_package_online_raw = reshape( (rtn_package_online_tmp2(1,:)*256 + rtn_package_online_tmp2(2,:)),...
+                                            sampleDimension, 1);
+            rtn_package_online_raw(1:2, :) = rtn_package_online_raw(1:2, :)/255*3.3;
+            rtn_package_online_raw(3, :) = rtn_package_online_raw(3, :)/65536*175.72-46.85;    % temperature;
+            rtn_package_online_raw(4, :) = (rtn_package_online_raw(4, :)-2)/65536*125-6;    % relative humiduty                                        
+                                        
+            rtn_package_online_OUT_tmp2 = reshape(rtn_package_online_tmp1(ind_out, recordCnt), 4, NumberOf2ndNeuron);
+            rtn_package_online_OUT = reshape( (rtn_package_online_OUT_tmp2(1,:)*(2^0) + rtn_package_online_OUT_tmp2(2,:)*(2^8)...
+                                            + rtn_package_online_OUT_tmp2(3,:)*(2^16) + rtn_package_online_OUT_tmp2(4,:)*(2^24)),...                                           
+                                            NumberOf2ndNeuron, 1);
+            rtn_package_online_OUT(rtn_package_online_OUT>2^31-1) = rtn_package_online_OUT(rtn_package_online_OUT>2^31-1)-2^32;
+            rtn_package_online_OUT_rectify = rtn_package_online_OUT;
+            rtn_package_online_OUT_rectify(rtn_package_online_OUT<0) = 0;
+            online_OUT_norm = rtn_package_online_OUT_rectify/sum(rtn_package_online_OUT_rectify);
+            set(handles.text_temperature, 'String', num2str(rtn_package_online_raw(3)));
+            set(handles.text_humidity, 'String', num2str(rtn_package_online_raw(4)));
+            set(handles.text_CO2, 'String', num2str(rtn_package_online_raw(1)));
+            set(handles.text_light, 'String', num2str(rtn_package_online_raw(2)));
+            pause(0.05);
+            % plot 
+            axes(handles.axes_outNeuron);
+            cla;            
+            bar(online_OUT_norm);
+            ylim([0 1]);
+            xlim([0 5]);
+%             set(gca,'YTick',0:10:40);
+%             set(gca,'YTickLabel',{'','10','20','30','40'},'FontSize',14);
+            set(gca,'FontSize',14);
+            set(gca,'XTick',1:5);
+            set(gca,'XTickLabel',{'0','1','2','3'},'FontSize',14);
+            ylabel('Propability','FontSize',14);
+            xlabel('Labels','FontSize',14);
+             pause(0.1);
+           
+            axes(handles.axes_LH);
+            cla;
+            imshow(PersonsImage{rtn_package_online_LABEL});
+            set(handles.text_label, 'String', labelString{rtn_package_online_LABEL},'FontSize', 42);
+            pause(0.1);
+            
+        case MODE_LABEL
+            
+        otherwise
+    end
+end
+
+% stop when record length is reached
+fwrite(uart,OnlineExitCommandPackage,'uchar');
+clear rtn_package_online_LABEL
+clear rtn_package_online_raw rtn_package_online_tmp2;
+clear rtn_package_online_OUT rtn_package_online_OUT_tmp2 rtn_package_online_OUT_rectify online_OUT_norm;
+% change format
+rtn_package_online_time_stamp = rtn_package_online_tmp1(1:6, :);
+switch(onlineMode)
+    case MODE_RAW
+        rtn_package_online_tmp2 = rtn_package_online_tmp1(ind_raw, :);
+        rtn_package_online_tmp3 = reshape(rtn_package_online_tmp2, 2, numel(rtn_package_online_tmp2)/2);
+        rtn_package_online_all = reshape( (rtn_package_online_tmp3(1,:)*256 + rtn_package_online_tmp3(2,:)),...
+                                            sampleDimension, recordLength);
+        rtn_package_online_raw = rtn_package_online_all;
+        rtn_package_online_raw(1:2, :) = rtn_package_online_raw(1:2, :)/255*3.3;
+        rtn_package_online_raw(3, :) = rtn_package_online_raw(3, :)/65536*175.72-46.85;    % temperature;
+        rtn_package_online_raw(4, :) = (rtn_package_online_raw(4, :)-2)/65536*125-6;    % relative humiduty
+    case MODE_HLN
+        rtn_package_online_tmp2 = rtn_package_online_tmp1([ind_raw ind_hln], :);
+        rtn_package_online_tmp3 = reshape(rtn_package_online_tmp2, 2, numel(rtn_package_online_tmp2)/2);
+        rtn_package_online_all = reshape( (rtn_package_online_tmp3(1,:)*256 + rtn_package_online_tmp3(2,:)),...
+                                            rtn_pac_len/2, recordLength);
+        rtn_package_online_raw = rtn_package_online_all(1:4, :);
+        rtn_package_online_raw(1:2, :) = rtn_package_online_raw(1:2, :)/255*3.3;
+        rtn_package_online_raw(3, :) = rtn_package_online_raw(3, :)/65536*175.72-46.85;    % temperature;
+        rtn_package_online_raw(4, :) = (rtn_package_online_raw(4, :)-2)/65536*125-6;    % relative humiduty 
+        rtn_package_online_HLN = rtn_package_online_all(inputDimension+1:inputDimension+NumberOfHLN, :);        
+    case MODE_OUT
+        rtn_package_online_LABEL = rtn_package_online_tmp1(ind_label, :);
+        rtn_package_online_tmp2 = rtn_package_online_tmp1([ind_raw ind_hln], :);
+        rtn_package_online_tmp3 = reshape(rtn_package_online_tmp2, 2, numel(rtn_package_online_tmp2)/2);
+        rtn_package_online_raw_hln = reshape( (rtn_package_online_tmp3(1,:)*256 + rtn_package_online_tmp3(2,:)),...
+                                            size(rtn_package_online_tmp2, 1)/2, recordLength);
+        rtn_package_online_raw = rtn_package_online_raw_hln(1:4, :);
+        rtn_package_online_raw(1:2, :) = rtn_package_online_raw(1:2, :)/255*3.3;
+        rtn_package_online_raw(3, :) = rtn_package_online_raw(3, :)/65536*175.72-46.85;    % temperature;
+        rtn_package_online_raw(4, :) = (rtn_package_online_raw(4, :)-2)/65536*125-6;    % relative humiduty
+        rtn_package_online_HLN = rtn_package_online_raw_hln(inputDimension+1 : inputDimension+NumberOfHLN, :); 
+        rtn_package_online_OUT_tmp2 = rtn_package_online_tmp1(ind_out, :);
+        rtn_package_online_OUT_tmp3 = reshape(rtn_package_online_OUT_tmp2, 4, numel(rtn_package_online_OUT_tmp2)/4);
+        rtn_package_online_OUT = reshape( (rtn_package_online_OUT_tmp3(1,:)*(2^0) + rtn_package_online_OUT_tmp3(2,:)*(2^8) + rtn_package_online_OUT_tmp3(3,:)*(2^16) + rtn_package_online_OUT_tmp3(4,:)*(2^24)),...                                           
+                                            NumberOf2ndNeuron, recordLength);
+        rtn_package_online_OUT(rtn_package_online_OUT>2^31-1) = rtn_package_online_OUT(rtn_package_online_OUT>2^31-1)-2^32;
+    case MODE_LABEL
+        rtn_package_online_LABEL = rtn_package_online_tmp1(end, :);
+    otherwise
+end
+
+
+
+
+% --- Executes on button press in pushbutton_Reset.
+function pushbutton_Reset_Callback(hObject, eventdata, handles)
+% hObject    handle to pushbutton_Reset (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+
+% --- Executes during object creation, after setting all properties.
+function checkbox_ActiveMode_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to checkbox_ActiveMode (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+global mode;
+mode = 0;
+
+
+% --- Executes during object creation, after setting all properties.
+function checkbox_ActiveOn_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to checkbox_ActiveOn (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+global active;
+active = 0;
+
+
+% --- Executes on button press in checkbox_PC.
+function checkbox_PC_Callback(hObject, eventdata, handles)
+% hObject    handle to checkbox_PC (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+global PC DataPosition SavePosition ImagePosition;
+PC = get(hObject,'Value'); %1 for desktop, 0 for laptop
+if PC
+%     DataPosition='D:\Dropbox\OK-AMS035-Oct13\20140609\';
+    DataPosition='D:\Dropbox\CY\decoder\Randaemon_delta\EventData\';
+    SavePosition='D:\Dropbox\CY\decoder\Randaemon_delta\Results\';
+    ImagePosition='D:\Dropbox\CY\decoder\personImages\';
+else
+%     DataPosition='C:Users\ChenYi\Dropbox\OK-AMS035-Oct13\20140609\';
+    DataPosition='C:\Users\Chen Yi\Dropbox\CY\decoder\Randaemon_delta\EventData\';
+    SavePosition='C:\Users\Chen Yi\Dropbox\CY\decoder\Randaemon_delta\Results\';
+    ImagePosition='C:\Users\Chen Yi\Dropbox\CY\decoder\personImages\';
+end
+% Hint: get(hObject,'Value') returns toggle state of checkbox_PC
+
+
+% --- Executes during object creation, after setting all properties.
+function checkbox_PC_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to checkbox_PC (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+global PC DataPosition SavePosition;
+PC = 0; %1 for desktop, 0 for laptop
+set(hObject,'Value', PC);
+if PC
+%     DataPosition='D:\Dropbox\OK-AMS035-Oct13\20140609\';
+    DataPosition='D:\Dropbox\CY\decoder\Randaemon_delta\EventData\';
+    SavePosition='D:\Dropbox\CY\decoder\Randaemon_delta\Results\';
+else
+%     DataPosition='C:Users\ChenYi\Dropbox\OK-AMS035-Oct13\20140609\';
+    DataPosition='C:\Users\Chen Yi\Dropbox\CY\decoder\Randaemon_delta\EventData\';
+    SavePosition='C:\Users\Chen Yi\Dropbox\CY\decoder\Randaemon_delta\Results\';
+end
+
+
+
+% --- Executes during object creation, after setting all properties.
+function text_Status_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to text_Status (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+
+
+
+
+% --- Executes during object creation, after setting all properties.
+function text_COMStatus_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to text_COMStatus (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+
+function [spi_data]=SPI_data_MSP430_AMS035(sel_input, bias_current, sel_output)
+
+Bin_bias=bitget(bias_current,[1:1:6]);
+Bin_in=zeros(1,128);
+Bin_out=zeros(1,128);
+Bin_in(sel_input+1)=1;
+Bin_out(sel_output+1)=1;
+
+Bin_all=[Bin_in Bin_bias Bin_out 0 0];
+Bin_all_matrix=reshape(Bin_all, 8, 33);
+weights=2.^(0:7);
+spi_data_tmp=weights*Bin_all_matrix;
+spi_data=spi_data_tmp(end:-1:1);
+
+function [switch_data]=Switch_MSP430_AMS035(RES, SDL, CA, CB, ext_ctrl, active, mode)
+switch_data=[RES*4+CA SDL*32+CB*8+ext_ctrl*4+active*2+mode];
+
+function[v1,v2]=RandDistr(input,l_v1)
+% randomly distribute value saved in input into v1 and v2 in sizes of l_v1
+% and length(input)-l_v2 respectively
+
+l_v=length(input);
+ind1=zeros(1,l_v);
+ind2=ones(1,l_v);
+for i=1:1:l_v1
+    tmp=randi([1 l_v],1);
+    while ind1(tmp)
+        tmp=randi([1 l_v],1);
+    end
+    ind1(tmp)=1;
+    ind2(tmp)=0;
+end
+v1=input(find(ind1));
+v2=input(find(ind2));
+
+
+function edit_samplePrd_Callback(hObject, eventdata, handles)
+% hObject    handle to edit_samplePrd (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+global samplePeriodHigh8b samplePeriodLow8b samplePeriod
+samplePrdInSec = str2double(get(hObject,'String'));
+samplePeriod = floor(samplePrdInSec*512);         % actural sample period = samplePrdInSec / (1/(512 Hz))
+samplePeriodHigh8b = floor(samplePeriod / 256);
+samplePeriodLow8b = mod(samplePeriod, 256);
+
+% Hints: get(hObject,'String') returns contents of edit_samplePrd as text
+%        str2double(get(hObject,'String')) returns contents of edit_samplePrd as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function edit_samplePrd_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to edit_samplePrd (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+global samplePeriodHigh8b samplePeriodLow8b
+samplePrdInSec = 1;
+samplePeriod = floor(samplePrdInSec*512);         % actural sample period = samplePrdInSec / (1/(512 Hz))
+samplePeriodHigh8b = floor(samplePeriod / 256);
+samplePeriodLow8b = mod(samplePeriod, 256);
+set(hObject,'String',num2str(samplePrdInSec));
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+% --- Executes on button press in pushbutton_stop.
+function pushbutton_stop_Callback(hObject, eventdata, handles)
+global OnlineExitCommandPackage uart;
+fwrite(uart,OnlineExitCommandPackage,'uchar');
+
+% hObject    handle to pushbutton_stop (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+
+function edit_operationTime_Callback(hObject, eventdata, handles)
+% hObject    handle to edit_operationTime (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+global recordLength samplePeriod;
+recordLength = floor(str2double(get(hObject,'String')) / samplePeriod);
+% Hints: get(hObject,'String') returns contents of edit_operationTime as text
+%        str2double(get(hObject,'String')) returns contents of edit_operationTime as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function edit_operationTime_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to edit_operationTime (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+global recordLength samplePeriod;
+recordLength = 20;
+set(hObject,'String', num2str(recordLength));
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+
+function edit_NEU_Callback(hObject, eventdata, handles)
+% hObject    handle to edit_NEU (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+global neuronOnTimeHigh8b neuronOnTimeLow8b
+neuronOnTimeInMillSec = str2double(get(hObject,'String'));
+neuronOnTime = round(neuronOnTimeInMillSec * 1e-3 / (6/32768)); %% actural time / (1/(32768 Hz) * 6)
+neuronOnTimeHigh8b = floor(neuronOnTime / 256);
+neuronOnTimeLow8b = mod(neuronOnTime, 256);
+% Hints: get(hObject,'String') returns contents of edit_NEU as text
+%        str2double(get(hObject,'String')) returns contents of edit_NEU as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function edit_NEU_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to edit_NEU (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+global neuronOnTimeHigh8b neuronOnTimeLow8b
+neuronOnTime = 40; %% actural time is 50 * (1/(32768 Hz)) * 6 = 50 * (0.183 ms) = 9.2 ms
+neuronOnTimeHigh8b = floor(neuronOnTime / 256);
+neuronOnTimeLow8b = mod(neuronOnTime, 256);
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+
+function edit_com_Callback(hObject, eventdata, handles)
+% hObject    handle to edit_com (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+global PortNumber uart baud;
+PortNumber = get(hObject,'String');
+% % PortNumber = contents(get(hObject,'Value'));
+% uart=serial(strcat('COM',PortNumber),'BaudRate',4800,'DataBits',8,'StopBits',1);%creat a serial port object
+uart=serial(strcat('COM',PortNumber),'BaudRate',baud,'DataBits',8,'StopBits',1);%creat a serial port object
+% Hints: get(hObject,'String') returns contents of edit_com as text
+%        str2double(get(hObject,'String')) returns contents of edit_com as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function edit_com_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to edit_com (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+global PortNumber uart baud;
+baud = 4800;
+PortNumber = '20';
+% % set(hObject, 'String', PortNumber);
+uart=serial(strcat('COM',PortNumber),'BaudRate',baud,'DataBits',8,'StopBits',1);%creat a serial port object
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+% --- Executes on button press in pushbutton_export.
+function pushbutton_export_Callback(hObject, eventdata, handles)
+global rtn_package_online_tmp1 rtn_package_online_raw rtn_package_online_HLN rtn_package_online_LABEL rtn_package_online_OUT;
+global rtn_package_online_time_stamp;
+uisave({'rtn_package_online_time_stamp','rtn_package_online_tmp1','rtn_package_online_raw','rtn_package_online_HLN'...
+        'rtn_package_online_LABEL','rtn_package_online_OUT'},'ReturnPackage.mat');
+
+
+
+% hObject    handle to pushbutton_export (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
